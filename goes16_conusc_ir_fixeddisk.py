@@ -1,4 +1,4 @@
-#!/home/poker/miniconda3/bin/python
+#!/home/poker/miniconda3/envs/goes16_201710/bin/python
 
 # GOES 16 IR (ABI Channel 14) plotting script. Based on 
 # http://nbviewer.jupyter.org/github/unidata/notebook-gallery/blob/master/notebooks/Plotting_GINI_Water_Vapor_Imagery_Part2.ipynb
@@ -35,13 +35,13 @@ filechar=['AA','AB','AC','AD','AE','AF','AG','AH','AI','AJ','AK','AL','AM',
 
 #print(filechar[1])
 
-prod_id = "TIRC"
-# pull date/time to process from stdin. YYYYMMDDHHmm of file named /weather/data/goes16/TIRC/##/YYYYMMDDHHmm_PAA.nc
+prod_id = "TIRE"
+# pull date/time to process from stdin. YYYYMMDDHHmm of file named /weather/data/goes16/TIRE/##/YYYYMMDDHHmm_PAA.nc
 #dt="201703051957"
 dt = sys.argv[1]
 
 # read in first tile, create numpy arrays big enough to hold entire tile data, x and y coords (a, xa, ya)
-#f = netCDF4.Dataset("/weather/data/goes16/TIRC/"+band+"/"+dt+"_PAA.nc")
+#f = netCDF4.Dataset("/weather/data/goes16/TIRE/"+band+"/"+dt+"_PAA.nc")
 f = netCDF4.Dataset("/weather/data/goes16/"+prod_id+"/"+band+"/"+dt+"_PAA.nc")
 a = np.zeros(shape=(f.product_rows,f.product_columns))
 xa= np.zeros(shape=(f.product_columns))
@@ -69,8 +69,8 @@ if f.number_product_tiles > 1:
 # this goes from 1 to number of tiles - 1
     for i in range(1,f.number_product_tiles):
 #    print(filechar[i])
-        if os.path.isfile("/weather/data/goes16/TIRC/"+band+"/"+dt+"_P"+filechar[i]+".nc"):
-            g = netCDF4.Dataset("/weather/data/goes16/TIRC/"+band+"/"+dt+"_P"+filechar[i]+".nc")
+        if os.path.isfile("/weather/data/goes16/TIRE/"+band+"/"+dt+"_P"+filechar[i]+".nc"):
+            g = netCDF4.Dataset("/weather/data/goes16/TIRE/"+band+"/"+dt+"_P"+filechar[i]+".nc")
 #        print(g)
             data_var2 = g.variables['Sectorized_CMI']
             a[g.tile_row_offset:g.tile_row_offset+g.product_tile_height,g.tile_column_offset:g.tile_column_offset+g.product_tile_width]=data_var2[:]
@@ -103,8 +103,9 @@ if f.number_product_tiles > 1:
 #################################
 #
 # swap zeros for ones
-a[a==0.] = 1.
+#a[a==0.] = 1.
 #
+
 
 # This if statement also originated from the visible script that I copied 
 # over to become this IR one.
@@ -120,6 +121,9 @@ a[a==0.] = 1.
 #if np.average(a) > 0.7:
 #    quit()
 
+xa=xa*35.785831
+ya=ya*35.785831
+
 
 # get projection info from the metadata
 proj_var = f.variables[data_var.grid_mapping]
@@ -128,15 +132,20 @@ proj_var = f.variables[data_var.grid_mapping]
 # the CONUS Lamert Conformal
 import cartopy.crs as ccrs
 
+### OLD ###
 # Create a Globe specifying a spherical earth with the correct radius
-globe = ccrs.Globe(ellipse='sphere', semimajor_axis=proj_var.semi_major,
-                   semiminor_axis=proj_var.semi_minor)
+#globe = ccrs.Globe(ellipse='sphere', semimajor_axis=proj_var.semi_major,
+#                   semiminor_axis=proj_var.semi_minor)
+#
+#proj = ccrs.LambertConformal(central_longitude=proj_var.longitude_of_central_meridian,
+#                             central_latitude=proj_var.latitude_of_projection_origin,
+#                             standard_parallels=[proj_var.standard_parallel],
+#                             globe=globe)
 
-proj = ccrs.LambertConformal(central_longitude=proj_var.longitude_of_central_meridian,
-                             central_latitude=proj_var.latitude_of_projection_origin,
-                             standard_parallels=[proj_var.standard_parallel],
-                             globe=globe)
-
+globe = ccrs.Globe(semimajor_axis=6378137.,semiminor_axis=6356752.)
+proj = ccrs.Geostationary(central_longitude=-75.0,
+                          satellite_height=35785831,
+                          globe=globe,sweep_axis='x')
 
 image_rows=f.product_rows
 image_columns=f.product_columns
@@ -150,10 +159,10 @@ image_columns=f.product_columns
 # indexing - -1 is the last element in the array dimension)
 #
 # Wisconsin close-up crop
-wi_image_crop_top=365
-wi_image_crop_bottom=-1750
-wi_image_crop_left=1290
-wi_image_crop_right=-1220
+wi_image_crop_top=48
+wi_image_crop_bottom=-1153
+wi_image_crop_left=1040
+wi_image_crop_right=-990
 
 wi_image_size_y=(image_rows+wi_image_crop_bottom-wi_image_crop_top)
 wi_image_size_x=(image_columns+wi_image_crop_right-wi_image_crop_left)
@@ -173,10 +182,10 @@ wi_image_size_x=float(wi_image_size_x)/40.
 wi_image_size_y=float(wi_image_size_y)/40.
 
 # Same stuff for Midwest crop
-mw_image_crop_top=295
-mw_image_crop_bottom=-1430
-mw_image_crop_left=875
-mw_image_crop_right=-1075
+mw_image_crop_top=23
+mw_image_crop_bottom=-953
+mw_image_crop_left=775
+mw_image_crop_right=-978
 
 mw_image_size_y=(image_rows+mw_image_crop_bottom-mw_image_crop_top)
 mw_image_size_x=(image_columns+mw_image_crop_right-mw_image_crop_left)
@@ -188,10 +197,10 @@ mw_image_size_x=float(mw_image_size_x)/75.
 mw_image_size_y=float(mw_image_size_y)/75.
 
 # Same stuff for Northeast crop
-ne_image_crop_top=95
-ne_image_crop_bottom=-1230
-ne_image_crop_left=1475
-ne_image_crop_right=-75
+ne_image_crop_top=25
+ne_image_crop_bottom=-725
+ne_image_crop_left=1275
+ne_image_crop_right=-125
 
 ne_image_size_y=(image_rows+ne_image_crop_bottom-ne_image_crop_top)
 ne_image_size_x=(image_columns+ne_image_crop_right-ne_image_crop_left)
@@ -205,10 +214,10 @@ ne_image_size_y=float(ne_image_size_y)/100.
 # Same stuff for CONUS crop - basically there is some white empty space
 # around the edges, especially at the bottom. I tried to crop that off
 # and create an image that would fit on an average screen.
-conus_image_crop_top=126
-conus_image_crop_bottom=-680
-conus_image_crop_left=50
-conus_image_crop_right=-225
+conus_image_crop_top=0
+conus_image_crop_bottom=0
+conus_image_crop_left=0
+conus_image_crop_right=0
 
 conus_image_size_y=(image_rows+conus_image_crop_bottom-conus_image_crop_top)
 conus_image_size_x=(image_columns+conus_image_crop_right-conus_image_crop_left)
@@ -220,10 +229,10 @@ conus_image_size_x=float(conus_image_size_x)/150.
 conus_image_size_y=float(conus_image_size_y)/150.
 
 
-gulf_image_crop_top=1073
-gulf_image_crop_bottom=-310
-gulf_image_crop_left=1174
-gulf_image_crop_right=-226
+gulf_image_crop_top=428
+gulf_image_crop_bottom=-5
+gulf_image_crop_left=649
+gulf_image_crop_right=-76
 
 gulf_image_size_y=(image_rows+gulf_image_crop_bottom-gulf_image_crop_top)
 gulf_image_size_x=(image_columns+gulf_image_crop_right-gulf_image_crop_left)
@@ -238,12 +247,15 @@ gulf_image_size_y=float(gulf_image_size_y)/60.
 # for any loops, and browsers will scale it down but you can click to zoom
 # to get the full resolution in all its beauty.
 #
-fig = plt.figure(figsize=(wi_image_size_x,wi_image_size_y),dpi=80.)
-fig2 = plt.figure(figsize=(mw_image_size_x,mw_image_size_y),dpi=160.)
-fig3 = plt.figure(figsize=(conus_image_size_x,conus_image_size_y),dpi=160.)
-fig4 = plt.figure(figsize=(ne_image_size_x,ne_image_size_y),dpi=160.)
-#fig2 = plt.figure(figsize=(image_columns/200.,image_rows/200.))
-fig8 = plt.figure(figsize=(gulf_image_size_x,gulf_image_size_y),dpi=83.)
+# Wisconsin Crop
+fig = plt.figure(figsize=(16.,10.17))
+# Midwest crop
+fig2 = plt.figure(figsize=(18.,12.62))
+# CONUS
+fig3 = plt.figure(figsize=(20.,11.987))
+# Northeast crop
+fig4 = plt.figure(figsize=(18.,12.27))
+fig8 = plt.figure(figsize=(30.,18.026))
 fig9 = plt.figure(figsize=(image_columns/80.,image_rows/80.))
 
 # Put a single axes on this figure; set the projection for the axes to be our
@@ -321,7 +333,7 @@ my_cmap = mpl.colors.LinearSegmentedColormap('my_colormap',cdict,2048)
 
 im = ax.imshow(a[wi_image_crop_top:wi_image_crop_bottom,wi_image_crop_left:wi_image_crop_right], extent=(xa[wi_image_crop_left],xa[wi_image_crop_right],ya[wi_image_crop_bottom],ya[wi_image_crop_top]), origin='upper',cmap=my_cmap, vmin=162., vmax=330.0)
 im = ax2.imshow(a[mw_image_crop_top:mw_image_crop_bottom,mw_image_crop_left:mw_image_crop_right], extent=(xa[mw_image_crop_left],xa[mw_image_crop_right],ya[mw_image_crop_bottom],ya[mw_image_crop_top]), origin='upper',cmap=my_cmap, vmin=162., vmax=330.0)
-im = ax3.imshow(a[conus_image_crop_top:conus_image_crop_bottom,conus_image_crop_left:conus_image_crop_right], extent=(xa[conus_image_crop_left],xa[conus_image_crop_right],ya[conus_image_crop_bottom],ya[conus_image_crop_top]), origin='upper',cmap=my_cmap, vmin=162., vmax=330.0)
+im = ax3.imshow(a[:], extent=(xa[0],xa[-1],ya[-1],ya[0]), origin='upper',cmap=my_cmap, vmin=162., vmax=330.0)
 im = ax4.imshow(a[ne_image_crop_top:ne_image_crop_bottom,ne_image_crop_left:ne_image_crop_right], extent=(xa[ne_image_crop_left],xa[ne_image_crop_right],ya[ne_image_crop_bottom],ya[ne_image_crop_top]), origin='upper',cmap=my_cmap, vmin=162., vmax=330.0)
 im = ax8.imshow(a[gulf_image_crop_top:gulf_image_crop_bottom,gulf_image_crop_left:gulf_image_crop_right], extent=(xa[gulf_image_crop_left],xa[gulf_image_crop_right],ya[gulf_image_crop_bottom],ya[gulf_image_crop_top]), origin='upper',cmap=my_cmap, vmin=162., vmax=330.0)
 im = ax9.imshow(a[:], extent=(xa[0],xa[-1],ya[-1],ya[0]), origin='upper', cmap=my_cmap, vmin=162., vmax=330.0)
@@ -441,9 +453,9 @@ text2 = ax2.text(0.50, 0.97, time_string,
 
 text2.set_path_effects(outline_effect)
 
-text3 = ax3.text(0.50, 0.95, time_string,
+text3 = ax3.text(0.50, 0.97, time_string,
     horizontalalignment='center', transform = ax3.transAxes,
-    color='darkorange', fontsize='large', weight='bold')
+    color='yellow', fontsize='large', weight='bold')
 
 text3.set_path_effects(outline_effect)
 
@@ -484,23 +496,35 @@ filename9="/whirlwind/goes16/irc/full/"+dt+"_full.jpg"
 #filename4="irc/"+dt+"_ne.jpg"
 #filename9="irc/"+dt+"_full.jpg"
 
-fig.figimage(aoslogo,  10, fig.bbox.ymax - aoslogoheight - 18  , zorder=10)
-fig2.figimage(aoslogo,  10, int(fig2.bbox.ymax /2) - aoslogoheight - 18  , zorder=10)
-fig3.figimage(aoslogo,  10, int(fig3.bbox.ymax /2) - aoslogoheight - 18  , zorder=10)
-fig4.figimage(aoslogo,  10, int(fig4.bbox.ymax /2) - aoslogoheight - 22  , zorder=10)
-fig8.figimage(aoslogo,  10, int(fig8.bbox.ymax *.96386) - aoslogoheight - 40  , zorder=10)
-fig9.figimage(aoslogo,  10, fig9.bbox.ymax - aoslogoheight - 18  , zorder=10)
+isize = fig.get_size_inches()*fig.dpi
+ysize=int(isize[1]*0.97)
+fig.figimage(aoslogo,  0, ysize - aoslogoheight   , zorder=10)
+isize = fig2.get_size_inches()*fig2.dpi
+ysize=int(isize[1]*0.97)
+fig2.figimage(aoslogo,  0, ysize - aoslogoheight   , zorder=10)
+isize = fig3.get_size_inches()*fig3.dpi
+ysize=int(isize[1]*0.97)
+fig3.figimage(aoslogo,  0, ysize - aoslogoheight   , zorder=10)
+isize = fig4.get_size_inches()*fig4.dpi
+ysize=int(isize[1]*0.97)
+fig4.figimage(aoslogo,  0, ysize - aoslogoheight   , zorder=10)
+isize = fig8.get_size_inches()*fig8.dpi
+ysize=int(isize[1]*0.97)
+fig8.figimage(aoslogo,  0, ysize - aoslogoheight   , zorder=10)
+isize = fig9.get_size_inches()*fig9.dpi
+ysize=int(isize[1]*0.97)
+fig9.figimage(aoslogo,  0, ysize - aoslogoheight   , zorder=10)
 
 print ("saving file name")
 print (filename1)
-fig.savefig(filename1, bbox_inches='tight')
+fig.savefig(filename1, bbox_inches='tight', pad_inches=0)
 print ("saving file name")
 print (filename2)
-fig2.savefig(filename2, bbox_inches='tight')
-fig3.savefig(filename3, bbox_inches='tight')
-fig4.savefig(filename4, bbox_inches='tight')
-fig8.savefig(filename8, bbox_inches='tight')
-fig9.savefig(filename9, bbox_inches='tight')
+fig2.savefig(filename2, bbox_inches='tight', pad_inches=0)
+fig3.savefig(filename3, bbox_inches='tight', pad_inches=0)
+fig4.savefig(filename4, bbox_inches='tight', pad_inches=0)
+fig8.savefig(filename8, bbox_inches='tight', pad_inches=0)
+fig9.savefig(filename9, bbox_inches='tight', pad_inches=0)
 
 # quit()
 
