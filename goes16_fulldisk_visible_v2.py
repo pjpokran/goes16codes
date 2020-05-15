@@ -86,7 +86,8 @@ if f.number_product_tiles > 1:
 data_var1 = a
 data_var1[data_var1 < 0.] = 0.
 
-# apply square root colormap up to 0.91, linear above to 1.31
+# for the square root verision - apply square root colormap up to 0.91, linear above to 1.31
+# for the linear version, just a = min(reflectance/1.16, 1.0)
 
 a = data_var1/1.16
 
