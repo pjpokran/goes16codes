@@ -244,6 +244,9 @@ ax9.outline_patch.set_edgecolor('none')
 
 import matplotlib as mpl
 
+
+# START This sqrt color table is no longer needed - it just uses Greys_r
+
 cdict2 = {'red': ( (0.000, 0.000, 0.000),
 (0.000, 0.022, 0.022),
 (0.001, 0.031, 0.031),
@@ -6390,6 +6393,8 @@ cdict2 = {'red': ( (0.000, 0.000, 0.000),
 (1.000, 1.000, 1.000))}
 
 my_cmap2 = mpl.colors.LinearSegmentedColormap('my_colormap2',cdict2,2048)
+
+# END This sqrt color table is no longer needed
 
 # Plot the data using a simple greyscale colormap (with black for low values);
 # set the colormap to extend over a range of values from 140 to 255.
